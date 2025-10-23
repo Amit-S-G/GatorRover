@@ -1,0 +1,1 @@
+This repository contains project code for the GatorRover (name subject to change), a remote-controlled land rover designed for remote observation of disaster zones and other such high-risk areas where direct human action may be too dangerous. This project is developed by Sunny Gupta, Corey Phillips, Chenfeng Su, and Michael Yao.
