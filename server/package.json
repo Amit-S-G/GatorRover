@@ -4,11 +4,15 @@
   "description": "Server for GatorRover",
   "main": "index.js",
   "scripts": {
+    "start-vm": "cross-env NODE_ENV=VM node index.js",
+    "start-local": "cross-env NODE_ENV=LOCAL node index.js",
     "test": "test"
   },
   "author": "Corey P, Sunny G, Myke Y, Chenfeng S",
   "license": "ISC",
   "dependencies": {
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0"
   }
 }
