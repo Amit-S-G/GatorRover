@@ -1,0 +1,14 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "Server for GatorRover",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Corey P, Sunny G, Myke Y, Chenfeng S",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
