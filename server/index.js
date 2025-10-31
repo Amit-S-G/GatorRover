@@ -1,6 +1,7 @@
 const express = require('express');
 const basicAuth = require('express-basic-auth');
 const fs = require('fs')
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -15,19 +16,32 @@ if (process.env.NODE_ENV === "LOCAL") {
   console.log("Starting VM setup.");
 }
 
+// we're abstracting "basicAuth" to the top, because we're going to need
+// to protect multiple things with it, so putting it here makes the code
+// a little cleaner
+const authMiddleware = basicAuth({
+  users: { [browser_username]: browser_password },
+  challenge: true
+});
+
 // this is the latest frame, we'll keep this updated whenever
 // '/upload' is hit, and return that image whenever '/stream'
 // is hit.
 let latestFrame = fs.readFileSync("Cute_dog.jpg");
 
+// this will expose everything in the public folder
+// while being protected by auth middleware
+//
+// (we don't exactly need to protect the main page,
+// but protecting the main page allows us to pass the credentials
+// through when html makes the request for script.js)
+app.use("/", authMiddleware, express.static(path.join(__dirname, "public")));
+
 // the stream endpoint (user accessible) requires basic auth from the .env file
 // and returns the jpeg image stored above once authenticated
 app.get(
   "/stream",
-  basicAuth({
-    users: { [browser_username]: browser_password },
-    challenge: true
-  }),
+  authMiddleware,
   (req, res) => {
     if (!latestFrame) {
       return res.status(404).send("No frame yet");
