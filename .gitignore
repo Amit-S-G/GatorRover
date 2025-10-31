@@ -2,3 +2,6 @@ server/node_modules
 
 .env
 server/.env
+
+certs/*.crt
+certs/*.key
