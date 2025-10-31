@@ -7,6 +7,7 @@ const app = express();
 
 const browser_username = process.env.browser_username;
 const browser_password = process.env.browser_password;
+const access_key = process.env.esp32_api_key;
 
 if (process.env.NODE_ENV === "LOCAL") {
   console.log("Starting local setup.");
@@ -41,7 +42,7 @@ app.get(
 app.use('/upload', express.raw({ type: 'image/jpeg', limit: '2mb' })); 
 app.post('/upload', (req, res) => {
   const auth = req.headers['authorization'];
-  if (!auth || auth !== `Bearer ${esp32_api_key}`) { // this checks to make sure the correct api key is sent
+  if (!auth || auth !== `Bearer ${access_key}`) { // this checks to make sure the correct api key is sent
     return res.status(401).send('Unauthorized');
   }
 
