@@ -1,5 +1,6 @@
 const express = require('express');
 const basicAuth = require('express-basic-auth');
+const fs = require('fs')
 require('dotenv').config();
 
 const app = express();
@@ -16,7 +17,7 @@ if (process.env.NODE_ENV === "LOCAL") {
 // this is the latest frame, we'll keep this updated whenever
 // '/upload' is hit, and return that image whenever '/stream'
 // is hit.
-let latestFrame = null;
+let latestFrame = fs.readFileSync("Cute_dog.jpg");
 
 // the stream endpoint (user accessible) requires basic auth from the .env file
 // and returns the jpeg image stored above once authenticated
