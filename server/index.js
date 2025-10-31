@@ -1,6 +1,7 @@
 const fs = require('fs');
 const https = require('https');
 const express = require('express');
+const basicAuth = require('express-basic-auth');
 require('dotenv').config();
 
 const app = express();
@@ -25,8 +26,15 @@ const httpsOptions = {
   rejectUnauthorized: false
 };
 
-app.get('/', (req, res) => {
-  res.send('Hello, secure world!');
+app.use(
+  "/",
+  basicAuth({
+    users: { [browser_username]: browser_password },
+    challenge: true
+  })
+);
+app.get("/", (req, res) => {
+  res.send("Hello, authorized user! You are now seeing the page.");
 });
 
 https.createServer(httpsOptions, app).listen(443, () => {
