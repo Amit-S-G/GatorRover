@@ -35,7 +35,7 @@ let latestFrame = fs.readFileSync("Cute_dog.jpg");
 // (we don't exactly need to protect the main page,
 // but protecting the main page allows us to pass the credentials
 // through when html makes the request for script.js)
-app.use("/", authMiddleware, express.static(path.join(__dirname, "public")));
+app.use("/view", authMiddleware, express.static(path.join(__dirname, "public")));
 
 // the stream endpoint (user accessible) requires basic auth from the .env file
 // and returns the jpeg image stored above once authenticated
