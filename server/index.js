@@ -1,42 +1,71 @@
-const fs = require('fs');
-const https = require('https');
 const express = require('express');
 const basicAuth = require('express-basic-auth');
+const fs = require('fs')
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
-var cert_path = null;
+
 const browser_username = process.env.browser_username;
 const browser_password = process.env.browser_password;
+const access_key = process.env.esp32_api_key;
 
-if (process.env.NODE_ENV === "LOCAL"){
-    console.log("Starting local setup.")
-    cert_path = process.env.certs_path_local
-}
-else if(process.env.NODE_ENV === "VM"){
-    console.log("Starting VM setup.")
-    cert_path = process.env.certs_path_vm
+if (process.env.NODE_ENV === "LOCAL") {
+  console.log("Starting local setup.");
+} else if (process.env.NODE_ENV === "VM") {
+  console.log("Starting VM setup.");
 }
 
-const httpsOptions = {
-  key: fs.readFileSync(cert_path + "/server.key"),
-  cert: fs.readFileSync(cert_path + "/server.crt"),
-  ca: fs.readFileSync(cert_path + "/ca.crt"),
-  requestCert: true,
-  rejectUnauthorized: false
-};
-
-app.use(
-  "/",
-  basicAuth({
-    users: { [browser_username]: browser_password },
-    challenge: true
-  })
-);
-app.get("/", (req, res) => {
-  res.send("Hello, authorized user! You are now seeing the page.");
+// we're abstracting "basicAuth" to the top, because we're going to need
+// to protect multiple things with it, so putting it here makes the code
+// a little cleaner
+const authMiddleware = basicAuth({
+  users: { [browser_username]: browser_password },
+  challenge: true
 });
 
-https.createServer(httpsOptions, app).listen(443, () => {
-  console.log('Successfully started!');
+// this is the latest frame, we'll keep this updated whenever
+// '/upload' is hit, and return that image whenever '/stream'
+// is hit.
+let latestFrame = fs.readFileSync("Cute_dog.jpg");
+
+// this will expose everything in the public folder
+// while being protected by auth middleware
+//
+// (we don't exactly need to protect the main page,
+// but protecting the main page allows us to pass the credentials
+// through when html makes the request for script.js)
+app.use("/view", authMiddleware, express.static(path.join(__dirname, "public")));
+
+// the stream endpoint (user accessible) requires basic auth from the .env file
+// and returns the jpeg image stored above once authenticated
+app.get(
+  "/stream",
+  authMiddleware,
+  (req, res) => {
+    if (!latestFrame) {
+      return res.status(404).send("No frame yet");
+    }
+    res.set("Content-Type", "image/jpeg");
+    res.send(latestFrame);
+  }
+);
+
+// the upload endpoint (ESP32 accessible) requires an api key from the .env file
+// and allows the caller to update the latestFrame with an uploaded jpg image
+app.use('/upload', express.raw({ type: 'image/jpeg', limit: '2mb' })); 
+app.post('/upload', (req, res) => {
+  const auth = req.headers['authorization'];
+  if (!auth || auth !== `Bearer ${access_key}`) { // this checks to make sure the correct api key is sent
+    return res.status(401).send('Unauthorized');
+  }
+
+  latestFrame = req.body;
+  res.send('Frame received');
+});
+
+
+const PORT = 8443;
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
 });
