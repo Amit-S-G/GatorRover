@@ -2,8 +2,7 @@ const img = document.getElementById("camera");
 
 // Poll /frame every 200ms
 setInterval(() => {
-  // the use of ?t= does nothing for the stream endpoint
-  // however, it is implemented to prevent cacheing from
-  // causing stream issues.
-  img.src = "/stream?t=" + new Date().getTime();
+  // the new etag header means a ?t path variable
+  // isn't necessary to get over caching issues.
+  img.src = "/stream"
 }, 5000);
