@@ -10,7 +10,7 @@ const browser_username = process.env.browser_username;
 const browser_password = process.env.browser_password;
 const access_key = process.env.esp32_api_key;
 
-const FRAMERATE = 10000;
+const FRAMERATE = 2000;
 
 if (process.env.NODE_ENV === "LOCAL") {
   console.log("Starting local setup.");
@@ -29,7 +29,7 @@ const authMiddleware = basicAuth({
 // this is the latest frame, we'll keep this updated whenever
 // '/upload' is hit, and return that image whenever '/stream'
 // is hit.
-let latestFrame = fs.readFileSync("Cute_dog.jpg");
+let latestFrame = null;
 
 // this will expose everything in the public folder
 // while being protected by auth middleware
