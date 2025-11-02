@@ -10,6 +10,8 @@ const browser_username = process.env.browser_username;
 const browser_password = process.env.browser_password;
 const access_key = process.env.esp32_api_key;
 
+const FRAMERATE = 10000;
+
 if (process.env.NODE_ENV === "LOCAL") {
   console.log("Starting local setup.");
 } else if (process.env.NODE_ENV === "VM") {
@@ -38,32 +40,38 @@ let latestFrame = fs.readFileSync("Cute_dog.jpg");
 app.use("/view", authMiddleware, express.static(path.join(__dirname, "public")));
 
 // the stream endpoint (user accessible) requires basic auth from the .env file
-// and returns the jpeg image stored above once authenticated
+// it sets up an MJPEG stream which the frontend index.html connects to
+// where the latest image is streamed forward every FRAMERATE/1000 seconds.
+// framerate should be set to a high value in testing to avoid bandwidth waste.
 app.get(
   "/stream",
   authMiddleware,
   (req, res) => {
   if (!latestFrame) return res.status(404).send("No frame yet");
 
-  // this hashing logic hashes the latest image
-  // and uses the "etag" trait of browsers to prevent
-  // the image from sending again if it hasn't changed
-  // (to stop my ngrok bandwidth from getting nuked)
-  const etag = require('crypto')
-    .createHash('md5')
-    .update(latestFrame)
-    .digest('hex');
+  // set the headers for an MJPEG stream
+  res.writeHead(200, {
+    "Cache-Control": "no-cache",
+    "Connection": "close",
+    "Content-Type": "multipart/x-mixed-replace; boundary=frame"
+  });
 
-  res.set('ETag', etag);
+  const sendFrame = () => {
+    if (latestFrame) {
+      res.write("--frame\r\n");
+      res.write("Content-Type: image/jpeg\r\n\r\n");
+      res.write(latestFrame);
+      res.write("\r\n");
+    }
+  };
 
-  if (req.headers['if-none-match'] === etag) {
-    // the browser automatically sends the last etag it got
-    // which we check here, and send 304 (no change) if the etags (md5 hashes) match
-    return res.status(304).end(); 
-  }
+  // Send a new frame every FRAMERATEms
+  const interval = setInterval(sendFrame, FRAMERATE);
 
-  res.set("Content-Type", "image/jpeg");
-  res.send(latestFrame);
+  // stop sending frames if the client disconnects
+  req.on("close", () => {
+    clearInterval(interval);
+  });
 });
 
 // the upload endpoint (ESP32 accessible) requires an api key from the .env file
