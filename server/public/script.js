@@ -6,4 +6,4 @@ setInterval(() => {
   // however, it is implemented to prevent cacheing from
   // causing stream issues.
   img.src = "/stream?t=" + new Date().getTime();
-}, 200);
+}, 5000);

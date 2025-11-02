@@ -43,13 +43,28 @@ app.get(
   "/stream",
   authMiddleware,
   (req, res) => {
-    if (!latestFrame) {
-      return res.status(404).send("No frame yet");
-    }
-    res.set("Content-Type", "image/jpeg");
-    res.send(latestFrame);
+  if (!latestFrame) return res.status(404).send("No frame yet");
+
+  // this hashing logic hashes the latest image
+  // and uses the "etag" trait of browsers to prevent
+  // the image from sending again if it hasn't changed
+  // (to stop my ngrok bandwidth from getting nuked)
+  const etag = require('crypto')
+    .createHash('md5')
+    .update(latestFrame)
+    .digest('hex');
+
+  res.set('ETag', etag);
+
+  if (req.headers['if-none-match'] === etag) {
+    // the browser automatically sends the last etag it got
+    // which we check here, and send 304 (no change) if the etags (md5 hashes) match
+    return res.status(304).end(); 
   }
-);
+
+  res.set("Content-Type", "image/jpeg");
+  res.send(latestFrame);
+});
 
 // the upload endpoint (ESP32 accessible) requires an api key from the .env file
 // and allows the caller to update the latestFrame with an uploaded jpg image
