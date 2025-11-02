@@ -10,6 +10,8 @@ const browser_username = process.env.browser_username;
 const browser_password = process.env.browser_password;
 const access_key = process.env.esp32_api_key;
 
+const FRAMERATE = 2000;
+
 if (process.env.NODE_ENV === "LOCAL") {
   console.log("Starting local setup.");
 } else if (process.env.NODE_ENV === "VM") {
@@ -27,7 +29,7 @@ const authMiddleware = basicAuth({
 // this is the latest frame, we'll keep this updated whenever
 // '/upload' is hit, and return that image whenever '/stream'
 // is hit.
-let latestFrame = fs.readFileSync("Cute_dog.jpg");
+let latestFrame = null;
 
 // this will expose everything in the public folder
 // while being protected by auth middleware
@@ -38,18 +40,39 @@ let latestFrame = fs.readFileSync("Cute_dog.jpg");
 app.use("/view", authMiddleware, express.static(path.join(__dirname, "public")));
 
 // the stream endpoint (user accessible) requires basic auth from the .env file
-// and returns the jpeg image stored above once authenticated
+// it sets up an MJPEG stream which the frontend index.html connects to
+// where the latest image is streamed forward every FRAMERATE/1000 seconds.
+// framerate should be set to a high value in testing to avoid bandwidth waste.
 app.get(
   "/stream",
   authMiddleware,
   (req, res) => {
-    if (!latestFrame) {
-      return res.status(404).send("No frame yet");
+  if (!latestFrame) return res.status(404).send("No frame yet");
+
+  // set the headers for an MJPEG stream
+  res.writeHead(200, {
+    "Cache-Control": "no-cache",
+    "Connection": "close",
+    "Content-Type": "multipart/x-mixed-replace; boundary=frame"
+  });
+
+  const sendFrame = () => {
+    if (latestFrame) {
+      res.write("--frame\r\n");
+      res.write("Content-Type: image/jpeg\r\n\r\n");
+      res.write(latestFrame);
+      res.write("\r\n");
     }
-    res.set("Content-Type", "image/jpeg");
-    res.send(latestFrame);
-  }
-);
+  };
+
+  // Send a new frame every FRAMERATEms
+  const interval = setInterval(sendFrame, FRAMERATE);
+
+  // stop sending frames if the client disconnects
+  req.on("close", () => {
+    clearInterval(interval);
+  });
+});
 
 // the upload endpoint (ESP32 accessible) requires an api key from the .env file
 // and allows the caller to update the latestFrame with an uploaded jpg image
