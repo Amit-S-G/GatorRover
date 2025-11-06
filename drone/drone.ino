@@ -7,7 +7,7 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
-#define PHOTO_RATE_MS 2000
+#define PHOTO_RATE_MS 5000
 
 // wheel info
 #include <SPI.h>
@@ -205,8 +205,8 @@ void setup() {
   digitalWrite(in2_left, LOW);
   digitalWrite(in1_right, LOW);
   digitalWrite(in2_right, LOW);
-  
-  if (!nrf24.init()) Serial.println("init failed");
+  delay(50);
+  while(!nrf24.init())
   if (!nrf24.setChannel(67)) Serial.println("setChannel failed");
   if (!nrf24.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) Serial.println("setRF failed");
   
@@ -214,7 +214,7 @@ void setup() {
 }
 
 void loop() {
-  if(last_photo_send - millis() > PHOTO_RATE_MS){ // only send a photo every [rate] milliseconds
+  if(millis() - last_photo_send > PHOTO_RATE_MS){ // only send a photo every [rate] milliseconds
     last_photo_send = millis();
     camera_capture();
   }
