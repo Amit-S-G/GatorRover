@@ -2,7 +2,6 @@
 #include "esp_camera.h"
 #include "camera_pins.h"
 #include "secrets.h"
-#include "ca_cert.h"
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -189,7 +188,6 @@ void setup() {
   }
   Serial.println();
 
-  // client.setCACert(root_ca_cert);
   client.setInsecure();
 
   camera_init();
