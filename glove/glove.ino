@@ -11,7 +11,7 @@ const int in1_left = 0;
 const int in2_left = 15;
 
 // Right Wheel H-bridge inputs
-const int in1_right = 13; 
+const int in1_right = 13;
 const int in2_right = 2;
 
 // Motor control variables
