@@ -92,3 +92,6 @@ const PORT = 8443;
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
 });
+app.get('/', (req, res) => {
+  res.redirect('/view');
+});

@@ -1,4 +1,6 @@
-server/node_modules
+# Ignore server dependencies
+server/node_modules/
+node_modules/
 
 .env
 server/.env
@@ -6,3 +8,5 @@ drone/secrets.h
 
 certs/*.crt
 certs/*.key
+.DS_Store
+*.log
