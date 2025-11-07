@@ -7,14 +7,14 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 
-#define PHOTO_RATE_MS 5000
+#define PHOTO_RATE_MS 2000
 
 // wheel info
 #include <SPI.h>
 #include <RH_NRF24.h>
 
-#define CE 4
-#define CSN 5
+#define CE 32
+#define CSN 33
 
 
 // WARNING:
@@ -190,7 +190,7 @@ void setup() {
 
   client.setInsecure();
 
-  camera_init();
+//   camera_init();
   
   
   // MOTOR SETUP -------------------------------------
@@ -205,8 +205,8 @@ void setup() {
   digitalWrite(in2_left, LOW);
   digitalWrite(in1_right, LOW);
   digitalWrite(in2_right, LOW);
-  delay(50);
-  while(!nrf24.init())
+  
+  if (!nrf24.init()) Serial.println("init failed");
   if (!nrf24.setChannel(67)) Serial.println("setChannel failed");
   if (!nrf24.setRF(RH_NRF24::DataRate2Mbps, RH_NRF24::TransmitPower0dBm)) Serial.println("setRF failed");
   
@@ -214,10 +214,10 @@ void setup() {
 }
 
 void loop() {
-  if(millis() - last_photo_send > PHOTO_RATE_MS){ // only send a photo every [rate] milliseconds
-    last_photo_send = millis();
-    camera_capture();
-  }
+//   if(last_photo_send - millis() > PHOTO_RATE_MS){ // only send a photo every [rate] milliseconds
+//     last_photo_send = millis();
+//     camera_capture();
+//   }
   do_wheel_update(); // always do a wheel update
-  delay(50); // pause for 1/20th second for motor stability
+  delay(500); // pause for 1/20th second for motor stability
 }
