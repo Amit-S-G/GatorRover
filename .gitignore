@@ -10,3 +10,4 @@ certs/*.crt
 certs/*.key
 .DS_Store
 *.log
+**/secrets.h

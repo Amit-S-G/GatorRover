@@ -4,6 +4,8 @@ This repository contains project code for the GatorRover (name subject to change
 - Node v18.20.4+
 - npm v9.2.0+
 
+## Note
+Currently, the code for the camera and the code for the motors are two separate files, while we work on merging them together. They can be found in `temps/camera` and `temps/motors`.
 
 ## Running the Project: Server
 1. Clone the repo.
