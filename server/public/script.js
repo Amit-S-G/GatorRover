@@ -1,8 +1,12 @@
-// const img = document.getElementById("camera");
+const img = document.getElementById("camera");
+const statusText = document.getElementById("status");
 
-// // Poll /frame every 200ms
-// setInterval(() => {
-//   // the new etag header means a ?t path variable
-//   // isn't necessary to get over caching issues.
-//   img.src = "/stream"
-// }, 5000);
+img.onload = () => {
+  statusText.textContent = "✅ Visual link established!";
+  statusText.style.color = "#00ff99";
+};
+
+img.onerror = () => {
+  statusText.textContent = "⚠️ No signal detected!";
+  statusText.style.color = "#ff4444";
+};
