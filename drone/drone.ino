@@ -13,8 +13,8 @@
 #include <SPI.h>
 #include <RH_NRF24.h>
 
-#define CE 32
-#define CSN 33
+#define CE 4
+#define CSN 5
 
 
 // WARNING:
