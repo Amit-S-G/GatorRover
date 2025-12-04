@@ -127,7 +127,7 @@ void process_microphone(){
       Serial.println(averageAmplitude);
       
       if (averageAmplitude > THRESHOLD) {
-        Serial.println("🔊 LOUD SOUND DETECTED!");
+        Serial.println("LOUD SOUND DETECTED!");
       }
     }
     
