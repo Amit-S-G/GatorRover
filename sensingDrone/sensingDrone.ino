@@ -3,7 +3,7 @@
  * 
  * Combines two subsystems on a single ESP32:
  * 1. I2S microphone for sound detection
- * 2. NRF24L01 wireless receiver for motor control
+ * 2. NRF24L01 wireless receiver for motor control (with sound status feedback)
  */
 
 #include <driver/i2s.h>
@@ -30,6 +30,7 @@ int16_t sBuffer[bufferLen];       // Audio sample buffer
 unsigned long windowStart = 0;    // Current window start time
 uint32_t sumAbs = 0;              // Accumulated amplitude
 uint32_t sampleCount = 0;         // Samples in current window
+bool loudSoundDetected = false;   // Status flag for controller
 
 // Motor control
 RH_NRF24 nrf24(CE, CSN);
@@ -96,6 +97,9 @@ void process_microphone(){
       
       if (averageAmplitude > THRESHOLD) {
         Serial.println("🔊 LOUD SOUND DETECTED!");
+        loudSoundDetected = true;
+      } else {
+        loudSoundDetected = false;
       }
     }
     
@@ -126,6 +130,14 @@ void do_wheel_update(){
       Serial.print(leftWheel);
       Serial.print(" | RIGHT: ");
       Serial.println(rightWheel);
+      
+      // Send back sound detection status
+      uint8_t status = loudSoundDetected ? 1 : 0;
+      nrf24.send(&status, sizeof(status));
+      nrf24.waitPacketSent();
+      
+      Serial.print("Sent sound status: ");
+      Serial.println(status);
     }
   }
   
