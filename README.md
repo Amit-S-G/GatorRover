@@ -29,7 +29,7 @@ Developed by: Sunny Gupta, Corey Phillips, Chenfeng Su, and Michael Yao
 
 GatorRover consists of three main components working together:
 
-1. **Glove Controller** - Wireless joystick-based controller worn as a glove that sends motor commands and receives environmental feedback
+1. **Glove Controller** - Wireless flex sensor-based controller worn as a glove that sends motor commands and receives environmental feedback
 2. **Sensing Drone** - The rover platform with motor control, environmental sound detection via I2S microphone, and camera capabilities
 3. **Video Streaming Server** - Node.js server that receives camera frames from the drone and streams live video to authenticated web clients
 
@@ -38,7 +38,7 @@ GatorRover consists of three main components working together:
 ## Features
 
 ### Glove Controller
-- Dual joystick control (left and right motors independently)
+- Dual flex sensor control (left and right motors independently)
 - NRF24L01 wireless transmission (2.4GHz)
 - Real-time feedback via LED indicator
 - Loud sound detection alerts from drone
@@ -69,7 +69,7 @@ GatorRover consists of three main components working together:
 │ Glove Controller│    ◄───── 2.4GHz ─────►      │  Sensing Drone   │
 │   (ESP32 #1)    │                              │    (ESP32 #2)    │
 │                 │   Command Codes (0-8)        │                  │
-│  - 2x Joysticks │  ──────────────────►         │  - 2x Motors     │
+│  - 2x Flex Sens │  ──────────────────►         │  - 2x Motors     │
 │  - LED Alert    │                              │  - I2S Mic       │
 │                 │   Sound Status (0/1)         │  - Motor Drivers │
 │                 │  ◄──────────────────          │                  │
@@ -103,7 +103,7 @@ GatorRover consists of three main components working together:
 ### Glove Controller
 - **Microcontroller:** ESP32 development board
 - **Radio Module:** NRF24L01+ transceiver
-- **Input:** 2x analog joysticks (potentiometer-based)
+- **Input:** 2x flex sensors (resistive bend sensors)
 - **Output:** 1x LED indicator
 - **Power:** USB or battery (3.3V/5V compatible)
 
@@ -154,23 +154,27 @@ Connect components according to the pin configuration:
   - CE → GPIO 4
   - CSN → GPIO 5
   - MOSI, MISO, SCK → SPI pins
-- **Joysticks:**
-  - Left joystick → GPIO 35 (analog)
-  - Right joystick → GPIO 34 (analog)
+- **Flex Sensors:**
+  - Left flex sensor → GPIO 35 (analog) with voltage divider
+  - Right flex sensor → GPIO 34 (analog) with voltage divider
 - **LED:**
   - Positive → GPIO 2
   - Negative → GND (through resistor)
+
+**Note:** Flex sensors require a voltage divider circuit. Connect each flex sensor in series with a 10kΩ resistor between 3.3V and GND, with the analog pin connected at the junction.
 
 #### Software Installation
 1. Install Arduino IDE and ESP32 board support
 2. Install RadioHead library via Library Manager
 3. Open `glove/glove.ino`
-4. Adjust joystick thresholds if needed:
+4. Adjust flex sensor thresholds if needed:
    ```cpp
-   int forwardThreshold = 30;      // Tune for your joysticks
-   int backwardThreshold = 1800;   // Tune for your joysticks
+   int forwardThreshold = 30;      // Tune for your flex sensors (flat position)
+   int backwardThreshold = 1800;   // Tune for your flex sensors (bent position)
    ```
 5. Upload to ESP32
+
+**Calibration:** Monitor the Serial output to see analog readings from your flex sensors when flat and bent, then adjust thresholds accordingly.
 
 ### 2. Sensing Drone Setup
 
@@ -199,7 +203,7 @@ Connect all components according to pin configurations:
 2. Open `sensingDrone/sensingDrone.ino`
 3. Adjust sound detection threshold if needed:
    ```cpp
-   #define THRESHOLD 600    // Adjust based on environment
+   #define THRESHOLD 350    // Adjust based on environment
    #define WINDOW_MS 500    // Averaging window
    ```
 4. Upload to ESP32
@@ -255,8 +259,8 @@ Connect all components according to pin configurations:
 |-----------|-----|----------|
 | NRF24 CE | GPIO 4 | Chip Enable |
 | NRF24 CSN | GPIO 5 | Chip Select |
-| Left Joystick | GPIO 35 | Analog Input |
-| Right Joystick | GPIO 34 | Analog Input |
+| Left Flex Sensor | GPIO 35 | Analog Input |
+| Right Flex Sensor | GPIO 34 | Analog Input |
 | LED | GPIO 2 | Alert Output |
 
 ### Sensing Drone (ESP32 #2)
@@ -280,12 +284,12 @@ Connect all components according to pin configurations:
 
 1. **Power on** both the glove controller and sensing drone
 2. **Start the video server** and open the web interface
-3. **Control the rover** using the joysticks:
-   - Left joystick: Controls left motor
-   - Right joystick: Controls right motor
-   - Forward: Push joystick forward
-   - Backward: Pull joystick backward
-   - Stop: Center position
+3. **Control the rover** using the flex sensors:
+   - Left flex sensor: Controls left motor
+   - Right flex sensor: Controls right motor
+   - Forward: Keep finger straight (unbent)
+   - Backward: Bend finger fully
+   - Stop: Neutral position (slightly bent)
 
 4. **Monitor feedback**:
    - LED on glove lights up when loud sound detected
@@ -364,7 +368,8 @@ NODE_ENV=LOCAL  # or VM
 
 ### Glove Controller Issues
 - **No response from drone:** Check NRF24 wiring and channel setting
-- **Joysticks not working:** Verify analog pin readings via Serial Monitor, adjust thresholds
+- **Flex sensors not working:** Verify analog pin readings via Serial Monitor, adjust thresholds
+- **Inconsistent readings:** Check voltage divider resistor values (should be 10kΩ), verify flex sensor connections
 - **LED not lighting:** Check LED polarity and GPIO 2 connection
 
 ### Sensing Drone Issues
