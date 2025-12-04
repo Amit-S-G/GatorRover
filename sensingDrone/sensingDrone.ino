@@ -34,11 +34,12 @@ uint32_t sampleCount = 0;         // Samples in current window
 // Motor control
 RH_NRF24 nrf24(CE, CSN);
 
-// H-bridge pins
-const int in1_left = 14;
+// Left Wheel H-bridge inputs
+const int in1_left = 0;
 const int in2_left = 15;
+// Right Wheel H-bridge inputs
 const int in1_right = 13;
-const int in2_right = 12;
+const int in2_right = 2;
 
 // Motor states: -1 = reverse, 0 = stop, 1 = forward
 int leftWheel = 0;
