@@ -1,85 +1,85 @@
-#include <driver/i2s.h>
-#define I2S_WS 25
-#define I2S_SD 33
-#define I2S_SCK 32
-#define I2S_PORT I2S_NUM_0
-#define bufferLen 64
-#define THRESHOLD 350       // loudness threshold
-#define WINDOW_MS 500       // 1.5 seconds
+// #include <driver/i2s.h>
+// #define I2S_WS 25
+// #define I2S_SD 33
+// #define I2S_SCK 32
+// #define I2S_PORT I2S_NUM_0
+// #define bufferLen 64
+// #define THRESHOLD 350       // loudness threshold
+// #define WINDOW_MS 500       // 1.5 seconds
 
-int16_t sBuffer[bufferLen];
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Setup I2S ...");
+// int16_t sBuffer[bufferLen];
+// void setup() {
+//   Serial.begin(115200);
+//   Serial.println("Setup I2S ...");
 
-  delay(1000);
-  i2s_install();
-  i2s_setpin();
-  i2s_start(I2S_PORT);
-  delay(500);
-}
+//   delay(1000);
+//   i2s_install();
+//   i2s_setpin();
+//   i2s_start(I2S_PORT);
+//   delay(500);
+// }
 
-void loop() {
-  static unsigned long windowStart = millis();
-  static uint32_t sumAbs = 0;
-  static uint32_t sampleCount = 0;
+// void loop() {
+//   static unsigned long windowStart = millis();
+//   static uint32_t sumAbs = 0;
+//   static uint32_t sampleCount = 0;
 
-  size_t bytesIn = 0;
-  esp_err_t result = i2s_read(I2S_PORT, &sBuffer, bufferLen * sizeof(int16_t), &bytesIn, portMAX_DELAY);
+//   size_t bytesIn = 0;
+//   esp_err_t result = i2s_read(I2S_PORT, &sBuffer, bufferLen * sizeof(int16_t), &bytesIn, portMAX_DELAY);
 
-  if (result == ESP_OK) {
-    int samples_read = bytesIn / sizeof(int16_t);
+//   if (result == ESP_OK) {
+//     int samples_read = bytesIn / sizeof(int16_t);
 
-    for (int i = 0; i < samples_read; i++) {
-      sumAbs += abs(sBuffer[i]);
-      sampleCount++;
-    }
-  }
+//     for (int i = 0; i < samples_read; i++) {
+//       sumAbs += abs(sBuffer[i]);
+//       sampleCount++;
+//     }
+//   }
 
-  // Check if 1.5 seconds have passed
-  if (millis() - windowStart >= WINDOW_MS) {
+//   // Check if 1.5 seconds have passed
+//   if (millis() - windowStart >= WINDOW_MS) {
 
-    if (sampleCount > 0) {
-      uint32_t averageAmplitude = sumAbs / sampleCount;
+//     if (sampleCount > 0) {
+//       uint32_t averageAmplitude = sumAbs / sampleCount;
 
-      Serial.print("Average amplitude: ");
-      Serial.println(averageAmplitude);
+//       Serial.print("Average amplitude: ");
+//       Serial.println(averageAmplitude);
 
-      if (averageAmplitude > THRESHOLD) {
-        Serial.println("LOUD SOUND DETECTED!");
-      }
-    }
+//       if (averageAmplitude > THRESHOLD) {
+//         Serial.println("LOUD SOUND DETECTED!");
+//       }
+//     }
 
-    // reset window
-    windowStart = millis();
-    sumAbs = 0;
-    sampleCount = 0;
-  }
-}
+//     // reset window
+//     windowStart = millis();
+//     sumAbs = 0;
+//     sampleCount = 0;
+//   }
+// }
 
-void i2s_install(){
-  const i2s_config_t i2s_config = {
-    .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
-    .sample_rate = 44100,
-    .bits_per_sample = i2s_bits_per_sample_t(16),
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_STAND_I2S),
-    .intr_alloc_flags = 0, // default interrupt priority
-    .dma_buf_count = 8,
-    .dma_buf_len = bufferLen,
-    .use_apll = false
-  };
+// void i2s_install(){
+//   const i2s_config_t i2s_config = {
+//     .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
+//     .sample_rate = 44100,
+//     .bits_per_sample = i2s_bits_per_sample_t(16),
+//     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+//     .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_STAND_I2S),
+//     .intr_alloc_flags = 0, // default interrupt priority
+//     .dma_buf_count = 8,
+//     .dma_buf_len = bufferLen,
+//     .use_apll = false
+//   };
 
-  i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
-}
+//   i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+// }
 
-void i2s_setpin(){
-  const i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_SCK,
-    .ws_io_num = I2S_WS,
-    .data_out_num = -1,
-    .data_in_num = I2S_SD
-  };
+// void i2s_setpin(){
+//   const i2s_pin_config_t pin_config = {
+//     .bck_io_num = I2S_SCK,
+//     .ws_io_num = I2S_WS,
+//     .data_out_num = -1,
+//     .data_in_num = I2S_SD
+//   };
 
-  i2s_set_pin(I2S_PORT, &pin_config);
-}
+//   i2s_set_pin(I2S_PORT, &pin_config);
+// }
