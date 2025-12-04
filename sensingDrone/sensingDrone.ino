@@ -1,10 +1,12 @@
+/*
+ * Integrated Drone Control System
+ * 
+ * Combines two subsystems on a single ESP32:
+ * 1. I2S microphone for sound detection
+ * 2. NRF24L01 wireless receiver for motor control
+ */
+
 #include <driver/i2s.h>
-#include "esp_camera.h"
-#include "camera_pins.h"
-#include "secrets.h"
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <HTTPClient.h>
 #include <SPI.h>
 #include <RH_NRF24.h>
 
@@ -19,9 +21,6 @@
 #define THRESHOLD 350             // Amplitude threshold for loud sound detection
 #define WINDOW_MS 500             // Averaging window in milliseconds
 
-// Camera settings
-#define PHOTO_RATE_MS 2000        // Photo capture interval
-
 // NRF24L01 radio pins
 #define CE 4                      // Chip Enable
 #define CSN 5                     // Chip Select
@@ -32,14 +31,10 @@ unsigned long windowStart = 0;    // Current window start time
 uint32_t sumAbs = 0;              // Accumulated amplitude
 uint32_t sampleCount = 0;         // Samples in current window
 
-// Camera state
-unsigned long last_photo_send = 0;
-WiFiClientSecure client;
-
 // Motor control
 RH_NRF24 nrf24(CE, CSN);
 
-// H-bridge pins (changed from GPIO 0,2 to avoid camera conflicts)
+// H-bridge pins
 const int in1_left = 14;
 const int in2_left = 15;
 const int in1_right = 13;
@@ -48,34 +43,6 @@ const int in2_right = 12;
 // Motor states: -1 = reverse, 0 = stop, 1 = forward
 int leftWheel = 0;
 int rightWheel = 0;
-
-// Camera configuration for ESP32-CAM (OV2640 sensor)
-static camera_config_t camera_config = {
-    .pin_pwdn  = CAM_PIN_PWDN,
-    .pin_reset = CAM_PIN_RESET,
-    .pin_xclk = CAM_PIN_XCLK,
-    .pin_sccb_sda = CAM_PIN_SIOD,
-    .pin_sccb_scl = CAM_PIN_SIOC,
-    .pin_d7 = CAM_PIN_D7,
-    .pin_d6 = CAM_PIN_D6,
-    .pin_d5 = CAM_PIN_D5,
-    .pin_d4 = CAM_PIN_D4,
-    .pin_d3 = CAM_PIN_D3,
-    .pin_d2 = CAM_PIN_D2,
-    .pin_d1 = CAM_PIN_D1,
-    .pin_d0 = CAM_PIN_D0,
-    .pin_vsync = CAM_PIN_VSYNC,
-    .pin_href = CAM_PIN_HREF,
-    .pin_pclk = CAM_PIN_PCLK,
-    .xclk_freq_hz = 20000000,     // 20MHz for OV2640
-    .ledc_timer = LEDC_TIMER_0,
-    .ledc_channel = LEDC_CHANNEL_0,
-    .pixel_format = PIXFORMAT_JPEG, // Server requires JPEG
-    .frame_size = FRAMESIZE_SVGA,   // 800x600 resolution
-    .jpeg_quality = 10,             // Lower = higher quality (0-63)
-    .fb_count = 1,
-    .grab_mode = CAMERA_GRAB_WHEN_EMPTY
-};
 
 // Initialize I2S driver with audio configuration
 void i2s_install(){
@@ -127,7 +94,7 @@ void process_microphone(){
       Serial.println(averageAmplitude);
       
       if (averageAmplitude > THRESHOLD) {
-        Serial.println("LOUD SOUND DETECTED!");
+        Serial.println("🔊 LOUD SOUND DETECTED!");
       }
     }
     
@@ -136,54 +103,6 @@ void process_microphone(){
     sumAbs = 0;
     sampleCount = 0;
   }
-}
-
-// Power up and initialize camera
-esp_err_t camera_init(){
-    // Power down pin control (if available)
-    if(CAM_PIN_PWDN != -1){
-        pinMode(CAM_PIN_PWDN, OUTPUT);
-        digitalWrite(CAM_PIN_PWDN, LOW);
-    }
-    
-    esp_err_t err = esp_camera_init(&camera_config);
-    if (err != ESP_OK) {
-        Serial.println("Camera Init Failed");
-        return err;
-    }
-    return ESP_OK;
-}
-
-// Capture image and POST to server via HTTPS
-esp_err_t camera_capture(){
-    // Get frame buffer from camera
-    camera_fb_t * fb = esp_camera_fb_get();
-    if (!fb) {
-        Serial.println("Camera Capture Failed");
-        return ESP_FAIL;
-    }
-    
-    Serial.println("Got image. Attempting to send..");
-    
-    // Send JPEG via HTTPS POST
-    HTTPClient http;
-    http.begin(client, SERVER_URL);
-    http.addHeader("Content-Type", "image/jpeg");
-    http.addHeader("Authorization", String("Bearer ") + ESP32_API_KEY);
-    
-    int httpResponseCode = http.POST(fb->buf, fb->len);
-    if (httpResponseCode > 0) {
-        Serial.printf("HTTP Response code: %d\n", httpResponseCode);
-    } else {
-        Serial.printf("Error sending POST: %s\n", http.errorToString(httpResponseCode).c_str());
-    }
-    
-    http.end();
-    Serial.println("Sent image!");
-    
-    // Return frame buffer to driver for reuse
-    esp_camera_fb_return(fb);
-    return ESP_OK;
 }
 
 // Decode motor command: converts 0-8 code into motor directions
@@ -242,21 +161,6 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   
-  // Connect to WiFi for camera streaming
-  Serial.print("Connecting to WiFi.");
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(200);
-  }
-  Serial.println(" Connected!");
-  client.setInsecure();
-  
-  // Initialize camera
-  Serial.println("Initializing camera...");
-  camera_init();
-  Serial.println("Camera ready!");
-  
   // Initialize I2S microphone
   Serial.println("Setup I2S microphone...");
   i2s_install();
@@ -284,19 +188,11 @@ void setup() {
   
   Serial.println("NRF24 Receiver Ready");
   Serial.println("\nAll systems initialized!\n");
-  
-  last_photo_send = millis();
 }
 
 void loop() {
   // Continuously monitor microphone (non-blocking)
   process_microphone();
-  
-  // Capture and send photos at regular intervals
-  if(millis() - last_photo_send > PHOTO_RATE_MS){
-    last_photo_send = millis();
-    camera_capture();
-  }
   
   // Always check for and process motor commands
   do_wheel_update();
