@@ -13,7 +13,7 @@ Developed by: Sunny Gupta, Corey Phillips, Chenfeng Su, and Michael Yao
 - [Software Requirements](#software-requirements)
 - [Setup Instructions](#setup-instructions)
   - [1. Glove Controller Setup](#1-glove-controller-setup)
-  - [2. Sensing Drone Setup](#2-sensing-drone-setup)
+  - [2. Drone Setup](#2-drone-setup)
   - [3. Video Streaming Server Setup](#3-video-streaming-server-setup)
 - [Pin Configurations](#pin-configurations)
 - [Usage](#usage)
@@ -29,7 +29,7 @@ Developed by: Sunny Gupta, Corey Phillips, Chenfeng Su, and Michael Yao
 GatorRover consists of three main components working together:
 
 1. **Glove Controller** - Wireless flex sensor-based controller worn as a glove that sends motor commands and receives environmental feedback
-2. **Sensing Drone** - The rover platform with motor control, environmental sound detection via I2S microphone, and camera capabilities
+2. **Drone** - The rover platform with motor control, environmental sound detection via I2S microphone, and camera capabilities
 3. **Video Streaming Server** - Node.js server that receives camera frames from the drone and streams live video to authenticated web clients
 
 ---
@@ -43,7 +43,7 @@ GatorRover consists of three main components working together:
 - Loud sound detection alerts from drone
 - Low-latency command transmission
 
-### Sensing Drone
+### Drone
 - Differential drive motor control (tank-style steering)
 - I2S microphone for environmental sound monitoring
 - Automatic loud sound detection with configurable threshold
@@ -70,7 +70,7 @@ GatorRover consists of three main components working together:
 - **Output:** 1x LED indicator
 - **Power:** USB or battery (3.3V/5V compatible)
 
-### Sensing Drone
+### Drone
 - **Microcontroller:** ESP32 development board
 - **Radio Module:** NRF24L01+ transceiver
 - **Microphone:** INMP441 I2S digital microphone
@@ -139,7 +139,7 @@ Connect components according to the pin configuration:
 
 **Calibration:** Monitor the Serial output to see analog readings from your flex sensors when flat and bent, then adjust thresholds accordingly.
 
-### 2. Sensing Drone Setup
+### 2. Drone Setup
 
 #### Wiring
 Connect all components according to pin configurations:
@@ -163,7 +163,7 @@ Connect all components according to pin configurations:
 
 #### Software Installation
 1. Install required libraries (RadioHead)
-2. Open `sensingDrone/sensingDrone.ino`
+2. Open `drone/drone.ino`
 3. Adjust sound detection threshold if needed:
    ```cpp
    #define THRESHOLD 350    // Adjust based on environment
@@ -226,7 +226,7 @@ Connect all components according to pin configurations:
 | Right Flex Sensor | GPIO 34 | Analog Input |
 | LED | GPIO 2 | Alert Output |
 
-### Sensing Drone (ESP32 #2)
+### Drone (ESP32 #2)
 | Component | Pin | Function |
 |-----------|-----|----------|
 | NRF24 CE | GPIO 4 | Chip Enable |
@@ -245,7 +245,7 @@ Connect all components according to pin configurations:
 
 ### Operating the Rover
 
-1. **Power on** both the glove controller and sensing drone
+1. **Power on** both the glove controller and drone
 2. **Start the video server** and open the web interface
 3. **Control the rover** using the flex sensors:
    - Left flex sensor: Controls left motor
@@ -335,7 +335,7 @@ NODE_ENV=LOCAL  # or VM
 - **Inconsistent readings:** Check voltage divider resistor values (should be 10kΩ), verify flex sensor connections
 - **LED not lighting:** Check LED polarity and GPIO 2 connection
 
-### Sensing Drone Issues
+### Drone Issues
 - **Motors not responding:** Verify H-bridge connections and power supply
 - **Microphone not detecting sound:** Check I2S wiring and threshold settings
 - **NRF24 communication failed:** Ensure both modules on same channel (67)
